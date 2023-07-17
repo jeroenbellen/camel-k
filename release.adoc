@@ -1,3 +1,4 @@
+
 = Releasing Apache Camel K
 
 This procedure describes all the steps required to release a new version of Apache Camel K.
@@ -63,13 +64,7 @@ A URL will be generated for the repository, like: https://repository.apache.org/
 [[release-camel-k-operator]]
 === Release Camel K Operator and CLI
 
-Releasing the Camel K main artifacts require some manual steps.
-
-First thing is to checkout main branch and sync with upstream.
-
-Next, the version of the runtime libraries to use need to be aligned in the Makefile.
-
-The following tasks need to be done:
+Releasing the Camel K main artifacts require some manual steps. The following tasks need to be done:
 
 - Align `KAMELET_CATALOG_REPO_TAG` in Makefile to latest released tag of the camel-kamelets repository
 - Align `RUNTIME_VERSION` in Makefile to latest Camel K Runtime release
@@ -91,8 +86,8 @@ Commit and push the changes done so far.
 ```
 git add *
 git commit -m "preparing for next release"
-# assuming write permissions
-git push upstream <branch_name>
+# assuming you're on release branch and have write permissions
+git push
 ```
 
 Now the release on staging can be executed.
@@ -100,28 +95,34 @@ Now the release on staging can be executed.
 ```
 make release-staging
 ```
+A docker image `camelk/camel-k:<version>` will be pushed to the staging organization (`camelk`, not `apache`). Binary files (CLIs) will be generated as well and put in the project root directory.
 
-Binary files will be generated and put in the project root directory, including examples.
+[[testing]]
+=== Do some testing
 
-Now run:
+Make sure to test the CLI you're about to publish. Expand and test the platform and archicture according to your local environment specifications:
+
+```
+$ tar -xvf camel-k-client-2.0.0-linux-amd64.tar.gz
+...
+$ ./kamel version
+Camel K Client 2.0.0
+```
+
+If the version retrieved is the one expected you can run an installation procedure
+
+```
+$ ./kamel install --operator-image=camelk/camel-k:$CAMEL_K_VERSION
+```
+
+Make some test and if all is in order, you can upload the sources and CLIs to the dist/dev repository in ASF the staged artifacts, in order to link them in the release vote communication.
 
 ```
 cd release-utils/scripts/
-./upload-sources.sh <released_version> <released_version>
+./upload-source.sh <released_version> <released_version>
 ```
 
-This will upload the sources, client and examples to the dist/dev repository in ASF.
-
-A docker image `camelk/camel-k:<version>` will be pushed to the staging organization (`camelk`, not `apache`).
-
-[[testing]]
-== Do some testing
-
-A combined release can be immediately tested with the following install command:
-
-```
-kamel install --operator-image=camelk/camel-k:$CAMEL_K_VERSION --maven-repository=https://repository.apache.org/content/repositories/orgapachecamel-$APACHE_NEXUS_RUNTIME_REPO_ID
-```
+Check that all resources have been correctly uploaded to https://dist.apache.org/repos/dist/dev/camel/camel-k/<released_version>/ directory.
 
 [[release-notes]]
 == Release notes
@@ -142,13 +143,6 @@ export GITHUB_TOKEN=token
 ```
 
 A `release-notes.md` file is generated and can be attached to the release github issue for reference.
-
-[[documentation]]
-== Documentation updates
-
-The version of Camel K and the main related dependencies are scraped automatically in a Github Action. You only need to provide the LTS parameter in the related `release` branch, when the release is marked as LTS (such as in https://github.com/apache/camel-k/blob/f15124949e43bb859d07f555b9e510956d6ed823/docs/antora.yml#L30)
-
-After the vote has passed, update the camel-website `antora-playbook.yml` `content.sources` section for camel-k and camel-k-runtime to use the newly released versions, replacing the previous released version.
 
 [[voting]]
 == Voting
@@ -194,6 +188,13 @@ The milestone field in the release doc is the Github id for the milestone (e.g. 
 
 [[post-release]]
 == Post Release
+
+[[documentation]]
+== Documentation updates
+
+The version of Camel K and the main related dependencies are scraped automatically in a Github Action. You only need to provide the LTS parameter in the related `release` branch, when the release is marked as LTS (such as in https://github.com/apache/camel-k/blob/f15124949e43bb859d07f555b9e510956d6ed823/docs/antora.yml#L30)
+
+After the vote has passed, update the camel-website `antora-playbook.yml` `content.sources` section for camel-k and camel-k-runtime to use the newly released versions, replacing the previous released version.
 
 === Operator Hub
 
